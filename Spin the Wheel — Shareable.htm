@@ -1,0 +1,497 @@
+<!-- File: spin-wheel.html
+
+Shareable Spin Wheel (WhatsApp-ready)
+
+Usage
+- Open this file in any browser.
+- Add names, then click Spin.
+- The page continuously encodes your names into the URL (param `d`). Copy the URL or use Share via WhatsApp.
+- When someone opens the link (desktop or Android), the wheel reconstructs from the URL.
+
+Notes
+- Pure HTML/CSS/JS (no dependencies). Works offline once loaded.
+- For sharing, host this file (e.g., GitHub Pages, Netlify). The WhatsApp button shares the hosted URL with your options.
+- Optional: remove winner after each spin.
+-->
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Spin the Wheel — Shareable</title>
+  <meta name="description" content="A shareable spin-the-wheel app. Add names, spin, and share via WhatsApp.">
+  <style>
+    :root {
+      --bg: #0f172a;          /* slate-900 */
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;       /* slate-600 */
+      --brand: #2563eb;       /* blue-600 */
+      --brand-2: #1d4ed8;     /* blue-700 */
+      --good: #16a34a;        /* green-600 */
+      --danger: #dc2626;      /* red-600 */
+      --ring: rgba(37, 99, 235, 0.35);
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: radial-gradient(1200px 800px at 20% -10%, #1e293b, var(--bg));
+      color: var(--text); font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      display: grid; place-items: center; padding: 24px;
+    }
+    .app {
+      width: 100%; max-width: 1100px; display: grid; gap: 18px;
+      grid-template-columns: 1.2fr .8fr; align-items: stretch;
+    }
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 18px; position: relative; overflow: hidden;
+    }
+    .card h2 { margin: 0 0 8px; font-size: 22px; }
+    .sub { color: var(--muted); font-size: 13px; margin-bottom: 12px; }
+
+    .wheel-wrap { position: relative; display: grid; place-items: center; padding: 10px; }
+    .wheel { width: 100%; max-width: 620px; aspect-ratio: 1 / 1; display: block; }
+    .pointer { position: absolute; top: 8px; width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-bottom: 28px solid var(--danger); filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+    .center-cap { position: absolute; width: 54px; height: 54px; border-radius: 50%; background: #fff; border: 3px solid #0f172a22; display: grid; place-items: center; font-weight: 700; color: var(--muted); box-shadow: 0 6px 20px rgba(0,0,0,.18) inset; }
+
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    button, .btn {
+      appearance: none; border: 0; border-radius: 999px; padding: 10px 14px; font-weight: 600; cursor: pointer;
+      background: var(--brand); color: #fff; box-shadow: 0 6px 18px rgba(37,99,235,.35);
+    }
+    button:hover { background: var(--brand-2); }
+    button.secondary { background: #e2e8f0; color: #0f172a; box-shadow: none; }
+    button.danger { background: var(--danger); }
+    button.good { background: var(--good); }
+    .muted { color: var(--muted); }
+
+    .grid { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+    .row { display: flex; gap: 10px; }
+    .input, textarea {
+      width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid #e2e8f0;
+      outline: none; font: inherit; background: #fff;
+    }
+    .input:focus, textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--ring); }
+
+    .list { margin-top: 12px; max-height: 360px; overflow: auto; padding-right: 6px; }
+    .chip { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 8px; background: #fff; }
+    .chip .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .chip .del { background: #f1f5f9; color: #0f172a; }
+
+    .toggle { display: flex; align-items: center; gap: 8px; margin: 4px 0 12px; }
+
+    .share { display: grid; gap: 8px; margin-top: 12px; }
+    .share .url { width: 100%; font: 13px/1.3 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; }
+
+    .result { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%);
+      background: #000000cc; color: #fff; padding: 8px 12px; border-radius: 999px; font-weight: 700; letter-spacing: .2px; display: none; }
+    .result.show { display: inline-block; }
+
+    .hint { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .hr { height: 1px; background: #e2e8f0; margin: 12px 0; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; background: #e2e8f0; color: #0f172a; padding: 3px 9px; border-radius: 999px; }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card">
+      <h2>Spin the Wheel</h2>
+      <div class="sub">Add names on the right → share the link → spin!</div>
+
+      <div class="wheel-wrap">
+        <canvas id="wheel" class="wheel" aria-label="wheel" role="img" width="593" height="593" style="width: 593.2px; height: 593.2px;"></canvas>
+        <div class="pointer" aria-hidden=""></div>
+        <div id="cap" class="center-cap" aria-hidden="" style="width: 53px; height: 53px;">🎯</div>
+        <div id="result" class="result" aria-live="polite"></div>
+      </div>
+
+      <div class="actions">
+        <button id="spinBtn" class="btn">🎰 Spin</button>
+        <button id="resetAngle" class="secondary">Reset angle</button>
+        <span id="countBadge" class="badge" title="Number of options">11 options</span>
+      </div>
+      <div class="hint">Tip: the link updates automatically as you edit names.</div>
+    </section>
+
+    <aside class="card">
+      <h2>Options</h2>
+      <div class="grid">
+        <input id="nameInput" class="input" type="text" placeholder="Add a name and press Enter" maxlength="120">
+        <button id="addBtn">Add</button>
+      </div>
+      <div class="toggle">
+        <input id="removeWinner" type="checkbox">
+        <label for="removeWinner">Remove winner after spin</label>
+      </div>
+      <div class="list" id="list"><div class="chip"><div class="name">Sex-T</div><button class="del">Delete</button></div><div class="chip"><div class="name">Sex-t with nudes</div><button class="del">Delete</button></div><div class="chip"><div class="name">Sex-t 2</div><button class="del">Delete</button></div><div class="chip"><div class="name">sexy time</div><button class="del">Delete</button></div><div class="chip"><div class="name">touch butt</div><button class="del">Delete</button></div><div class="chip"><div class="name">nudes</div><button class="del">Delete</button></div><div class="chip"><div class="name">Read separate books</div><button class="del">Delete</button></div><div class="chip"><div class="name">Read the same book</div><button class="del">Delete</button></div><div class="chip"><div class="name">Talk about future home</div><button class="del">Delete</button></div><div class="chip"><div class="name">Talk about small projects in future</div><button class="del">Delete</button></div><div class="chip"><div class="name">Talk about decor</div><button class="del">Delete</button></div></div>
+
+      <div class="hr"></div>
+      <details>
+        <summary><strong>Bulk add</strong> (one per line)</summary>
+        <textarea id="bulk" rows="5" placeholder="Paste names here, one per line"></textarea>
+        <div class="actions">
+          <button id="bulkAdd" class="secondary">Add All</button>
+          <button id="bulkReplace" class="danger">Replace List</button>
+        </div>
+      </details>
+
+      <div class="hr"></div>
+      <div class="share">
+        <div class="sub">Share this exact wheel:</div>
+        <input id="shareUrl" class="url" type="text" readonly="readonly" value="file:///C:/Users/Alexander/Downloads/shareable_spin_wheel_whats_app_ready_single_file_app.html?d=WyJTZXgtVCIsIlNleC10IHdpdGggbnVkZXMiLCJTZXgtdCAyIiwic2V4eSB0aW1lIiwidG91Y2ggYnV0dCIsIm51ZGVzIiwiUmVhZCBzZXBhcmF0ZSBib29rcyIsIlJlYWQgdGhlIHNhbWUgYm9vayIsIlRhbGsgYWJvdXQgZnV0dXJlIGhvbWUiLCJUYWxrIGFib3V0IHNtYWxsIHByb2plY3RzIGluIGZ1dHVyZSIsIlRhbGsgYWJvdXQgZGVjb3IiXQ%253D%253D">
+        <div class="row">
+          <button id="copyBtn" class="secondary">Copy link</button>
+          <button id="waBtn" class="good">Share via WhatsApp</button>
+        </div>
+      </div>
+      <div class="hint">Hosting required for others to open the link (GitHub Pages, Netlify, Vercel, etc.).</div>
+    </aside>
+  </main>
+
+  <script>
+    // ---------- Small helpers ----------
+    const $ = (sel, root = document) => root.querySelector(sel);
+    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+    const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+    const TAU = Math.PI * 2;
+
+    // UTF-8 safe Base64
+    function b64encodeUtf8(str) {
+      const bytes = new TextEncoder().encode(str);
+      let bin = ""; for (const b of bytes) bin += String.fromCharCode(b);
+      return btoa(bin);
+    }
+    function b64decodeUtf8(b64) {
+      const bin = atob(b64);
+      const bytes = new Uint8Array([...bin].map(ch => ch.charCodeAt(0)));
+      return new TextDecoder().decode(bytes);
+    }
+
+    function encodeOptions(opts) {
+      // Why: encode as URL-safe Base64 JSON to preserve Unicode and keep links compact.
+      const json = JSON.stringify(opts);
+      return encodeURIComponent(b64encodeUtf8(json));
+    }
+    function decodeOptions(s) {
+      try {
+        const json = b64decodeUtf8(decodeURIComponent(s));
+        const arr = JSON.parse(json);
+        if (Array.isArray(arr)) return arr.map(x => String(x)).filter(Boolean);
+      } catch (_) {}
+      return null;
+    }
+
+    function colorForIndex(i, n) {
+      // Golden angle for distinct hues
+      const hue = (i * 137.508) % 360;
+      return `hsl(${hue} 70% 55%)`;
+    }
+
+    function textColorFor(hslString) {
+      // Convert HSL to approximate luminance for contrast decision
+      const m = hslString.match(/hsl\(([^)]*)\)/);
+      if (!m) return "#000";
+      const [h, s, l] = m[1].split(/\s+/).map(x => parseFloat(x));
+      // quick HSL->RGB (0..1)
+      const S = s / 100, L = l / 100;
+      const C = (1 - Math.abs(2 * L - 1)) * S;
+      const Hp = (h / 60) % 6;
+      const X = C * (1 - Math.abs((Hp % 2) - 1));
+      let [r1, g1, b1] = [0, 0, 0];
+      if (0 <= Hp && Hp < 1) [r1, g1, b1] = [C, X, 0];
+      else if (1 <= Hp && Hp < 2) [r1, g1, b1] = [X, C, 0];
+      else if (2 <= Hp && Hp < 3) [r1, g1, b1] = [0, C, X];
+      else if (3 <= Hp && Hp < 4) [r1, g1, b1] = [0, X, C];
+      else if (4 <= Hp && Hp < 5) [r1, g1, b1] = [X, 0, C];
+      else [r1, g1, b1] = [C, 0, X];
+      const m0 = L - C / 2;
+      const [r, g, b] = [r1 + m0, g1 + m0, b1 + m0];
+      const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      return luminance > 0.5 ? "#111" : "#fff";
+    }
+
+    // ---------- State ----------
+    let options = [];
+    let removeAfterSpin = false;
+    let spinning = false;
+    let currentAngle = 0;   // radians
+
+    // ---------- Elements ----------
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    const spinBtn = document.getElementById('spinBtn');
+    const resetBtn = document.getElementById('resetAngle');
+    const resultEl = document.getElementById('result');
+    const capEl = document.getElementById('cap');
+    const nameInput = document.getElementById('nameInput');
+    const addBtn = document.getElementById('addBtn');
+    const listEl = document.getElementById('list');
+    const bulkTa = document.getElementById('bulk');
+    const bulkAddBtn = document.getElementById('bulkAdd');
+    const bulkReplaceBtn = document.getElementById('bulkReplace');
+    const shareUrl = document.getElementById('shareUrl');
+    const copyBtn = document.getElementById('copyBtn');
+    const waBtn = document.getElementById('waBtn');
+    const removeCb = document.getElementById('removeWinner');
+    const badge = document.getElementById('countBadge');
+
+    // ---------- Canvas sizing ----------
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const size = Math.min(rect.width, 620);
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(size * dpr);
+      canvas.height = Math.floor(size * dpr);
+      canvas.style.width = size + 'px';
+      canvas.style.height = size + 'px';
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+      capEl.style.width = Math.round(size * 0.09) + 'px';
+      capEl.style.height = Math.round(size * 0.09) + 'px';
+      drawWheel();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // ---------- Wheel drawing ----------
+    function drawWheel() {
+      const rect = canvas.getBoundingClientRect();
+      const size = Math.min(rect.width, rect.height);
+      const cx = size / 2, cy = size / 2;
+      const r = size * 0.47;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-Math.PI / 2); // why: make angle 0 point up so pointer math is simpler
+      ctx.rotate(currentAngle % TAU);
+
+      if (options.length === 0) {
+        // Empty state
+        ctx.save();
+        ctx.rotate(Math.PI / 2);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, TAU);
+        ctx.fill();
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 18px system-ui,Segoe UI,Roboto';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Add names to start', 0, 0);
+        ctx.restore();
+        ctx.restore();
+        drawPointer(cx, cy, r);
+        return;
+      }
+
+      const n = options.length;
+      const arc = TAU / Math.max(n, 1);
+
+      for (let i = 0; i < n; i++) {
+        const start = i * arc;
+        const end = start + arc;
+        const bg = colorForIndex(i, n);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, r, start, end);
+        ctx.closePath();
+        ctx.fillStyle = bg;
+        ctx.fill();
+
+        // Label
+        ctx.save();
+        ctx.rotate(start + arc / 2);
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        const label = String(options[i]);
+        const fontSize = clamp(Math.floor(size / 28), 10, 18);
+        ctx.font = `600 ${fontSize}px system-ui,Segoe UI,Roboto`;
+        ctx.fillStyle = textColorFor(bg);
+        ctx.translate(0, 0);
+        ctx.fillText(label, r - 12, 0);
+        ctx.restore();
+      }
+
+      // Rim
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, TAU);
+      ctx.lineWidth = Math.max(2, size * 0.01);
+      ctx.strokeStyle = '#0f172a33';
+      ctx.stroke();
+
+      ctx.restore();
+      drawPointer(cx, cy, r);
+    }
+
+    function drawPointer(cx, cy, r) {
+      // just redraw a subtle target arc under the pointer for focus
+      const size = Math.min(canvas.getBoundingClientRect().width, canvas.getBoundingClientRect().height);
+      const dpr = window.devicePixelRatio || 1;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-Math.PI / 2);
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 0.92, -0.03, 0.03);
+      ctx.lineWidth = Math.max(3, size * 0.012);
+      ctx.strokeStyle = '#0f172a55';
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // ---------- UI rendering ----------
+    function updateList() {
+      listEl.innerHTML = '';
+      options.forEach((name, idx) => {
+        const row = document.createElement('div');
+        row.className = 'chip';
+        const nameEl = document.createElement('div');
+        nameEl.className = 'name';
+        nameEl.textContent = name;
+        const del = document.createElement('button');
+        del.className = 'del';
+        del.textContent = 'Delete';
+        del.addEventListener('click', () => {
+          options.splice(idx, 1);
+          syncUrl();
+          updateAll();
+        });
+        row.appendChild(nameEl);
+        row.appendChild(del);
+        listEl.appendChild(row);
+      });
+      badge.textContent = `${options.length} option${options.length === 1 ? '' : 's'}`;
+      spinBtn.disabled = options.length < 2 || spinning;
+    }
+
+    function syncUrl() {
+      const u = new URL(location.href);
+      u.searchParams.set('d', encodeOptions(options));
+      history.replaceState(null, '', u);
+      shareUrl.value = u.href;
+    }
+
+    function updateAll() {
+      updateList();
+      drawWheel();
+    }
+
+    // ---------- Spin logic ----------
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+    async function spin() {
+      if (spinning || options.length < 2) return;
+      spinning = true; spinBtn.disabled = true; resultEl.classList.remove('show');
+
+      const n = options.length;
+      const arc = TAU / n;
+      const targetIndex = Math.floor(Math.random() * n);
+      const jitter = (Math.random() - 0.5) * (arc * 0.9); // why: avoid always landing dead-center
+      const current = currentAngle % TAU;
+      const target = (TAU - ((targetIndex + 0.5) * arc + jitter));
+      const turns = 6 + Math.floor(Math.random() * 3); // 6-8 full turns
+      const finalAngle = current + turns * TAU + (target - (current % TAU));
+
+      const duration = 4200 + Math.random() * 800;
+      const start = performance.now();
+      const startAngle = currentAngle;
+
+      return new Promise(resolve => {
+        function frame(now) {
+          const t = clamp((now - start) / duration, 0, 1);
+          const k = easeOutCubic(t);
+          currentAngle = startAngle + (finalAngle - startAngle) * k;
+          drawWheel();
+          if (t < 1) requestAnimationFrame(frame);
+          else {
+            const winner = options[targetIndex];
+            announceWinner(winner, targetIndex);
+            spinning = false; spinBtn.disabled = options.length < 2;
+            resolve();
+          }
+        }
+        requestAnimationFrame(frame);
+      });
+    }
+
+    function announceWinner(name, idx) {
+      resultEl.textContent = `Winner: ${name}`;
+      resultEl.classList.add('show');
+      capEl.textContent = '🏆';
+      if (removeAfterSpin) {
+        options.splice(idx, 1);
+        syncUrl();
+        updateAll();
+      }
+      setTimeout(() => { capEl.textContent = '🎯'; }, 1300);
+    }
+
+    // ---------- Events ----------
+    addBtn.addEventListener('click', () => {
+      const t = nameInput.value.trim();
+      if (!t) return;
+      options.push(t);
+      nameInput.value = '';
+      syncUrl();
+      updateAll();
+      nameInput.focus();
+    });
+    nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') addBtn.click(); });
+
+    bulkAddBtn.addEventListener('click', () => {
+      const lines = bulkTa.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      if (!lines.length) return;
+      options.push(...lines);
+      bulkTa.value = '';
+      syncUrl();
+      updateAll();
+    });
+    bulkReplaceBtn.addEventListener('click', () => {
+      const lines = bulkTa.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      options = lines;
+      syncUrl();
+      updateAll();
+    });
+
+    removeCb.addEventListener('change', () => { removeAfterSpin = !!removeCb.checked; });
+
+    spinBtn.addEventListener('click', spin);
+    resetBtn.addEventListener('click', () => { currentAngle = 0; drawWheel(); resultEl.classList.remove('show'); });
+
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(shareUrl.value);
+        copyBtn.textContent = 'Copied!'; setTimeout(() => copyBtn.textContent = 'Copy link', 1200);
+      } catch (_) {
+        shareUrl.select(); document.execCommand('copy');
+      }
+    });
+
+    waBtn.addEventListener('click', () => {
+      const text = `Spin this wheel with me: ${shareUrl.value}`;
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    });
+
+    // ---------- Init ----------
+    function initFromURL() {
+      const u = new URL(location.href);
+      const d = u.searchParams.get('d');
+      const decoded = d ? decodeOptions(d) : null;
+      options = decoded && decoded.length ? decoded : ['Alice', 'Bob', 'Charlie', 'Diana'];
+      removeAfterSpin = false; removeCb.checked = false;
+      resizeCanvas();
+      updateAll();
+      syncUrl();
+    }
+
+    initFromURL();
+  </script>
+
+
+</body></html>
