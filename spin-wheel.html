@@ -13,13 +13,14 @@ Notes
 - For sharing, host this file (e.g., GitHub Pages, Netlify). The WhatsApp button shares the hosted URL with your options.
 - Optional: remove winner after each spin.
 -->
+
 <!DOCTYPE html>
-<html lang="en"><head>
-<meta http-equiv="content-type" content="text/html; charset=UTF-8">
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Spin the Wheel — Shareable</title>
-  <meta name="description" content="A shareable spin-the-wheel app. Add names, spin, and share via WhatsApp.">
+  <meta name="description" content="A shareable spin-the-wheel app. Add names, spin, and share via WhatsApp." />
   <style>
     :root {
       --bg: #0f172a;          /* slate-900 */
@@ -105,16 +106,16 @@ Notes
       <div class="sub">Add names on the right → share the link → spin!</div>
 
       <div class="wheel-wrap">
-        <canvas id="wheel" class="wheel" aria-label="wheel" role="img" width="593" height="593" style="width: 593.2px; height: 593.2px;"></canvas>
-        <div class="pointer" aria-hidden=""></div>
-        <div id="cap" class="center-cap" aria-hidden="" style="width: 53px; height: 53px;">🎯</div>
-        <div id="result" class="result" aria-live="polite">Winner: Read the same book</div>
+        <canvas id="wheel" class="wheel" aria-label="wheel" role="img"></canvas>
+        <div class="pointer" aria-hidden></div>
+        <div id="cap" class="center-cap" aria-hidden>🎯</div>
+        <div id="result" class="result" aria-live="polite"></div>
       </div>
 
       <div class="actions">
         <button id="spinBtn" class="btn">🎰 Spin</button>
         <button id="resetAngle" class="secondary">Reset angle</button>
-        <span id="countBadge" class="badge" title="Number of options">11 options</span>
+        <span id="countBadge" class="badge" title="Number of options">0 options</span>
       </div>
       <div class="hint">Tip: the link updates automatically as you edit names.</div>
     </section>
@@ -122,14 +123,14 @@ Notes
     <aside class="card">
       <h2>Options</h2>
       <div class="grid">
-        <input id="nameInput" class="input" type="text" placeholder="Add a name and press Enter" maxlength="120">
+        <input id="nameInput" class="input" type="text" placeholder="Add a name and press Enter" maxlength="120" />
         <button id="addBtn">Add</button>
       </div>
       <div class="toggle">
-        <input id="removeWinner" type="checkbox">
+        <input id="removeWinner" type="checkbox" />
         <label for="removeWinner">Remove winner after spin</label>
       </div>
-      <div class="list" id="list"><div class="chip"><div class="name">Sex-T</div><button class="del">Delete</button></div><div class="chip"><div class="name">Sex-t with nudes</div><button class="del">Delete</button></div><div class="chip"><div class="name">Sex-t 2</div><button class="del">Delete</button></div><div class="chip"><div class="name">sexy time</div><button class="del">Delete</button></div><div class="chip"><div class="name">touch butt</div><button class="del">Delete</button></div><div class="chip"><div class="name">nudes</div><button class="del">Delete</button></div><div class="chip"><div class="name">Read separate books</div><button class="del">Delete</button></div><div class="chip"><div class="name">Read the same book</div><button class="del">Delete</button></div><div class="chip"><div class="name">Talk about future home</div><button class="del">Delete</button></div><div class="chip"><div class="name">Talk about small projects in future</div><button class="del">Delete</button></div><div class="chip"><div class="name">Talk about decor</div><button class="del">Delete</button></div></div>
+      <div class="list" id="list"></div>
 
       <div class="hr"></div>
       <details>
@@ -144,7 +145,7 @@ Notes
       <div class="hr"></div>
       <div class="share">
         <div class="sub">Share this exact wheel:</div>
-        <input id="shareUrl" class="url" type="text" readonly="readonly" value="file:///C:/Users/Alexander/Downloads/shareable_spin_wheel_whats_app_ready_single_file_app.html?d=WyJTZXgtVCIsIlNleC10IHdpdGggbnVkZXMiLCJTZXgtdCAyIiwic2V4eSB0aW1lIiwidG91Y2ggYnV0dCIsIm51ZGVzIiwiUmVhZCBzZXBhcmF0ZSBib29rcyIsIlJlYWQgdGhlIHNhbWUgYm9vayIsIlRhbGsgYWJvdXQgZnV0dXJlIGhvbWUiLCJUYWxrIGFib3V0IHNtYWxsIHByb2plY3RzIGluIGZ1dHVyZSIsIlRhbGsgYWJvdXQgZGVjb3IiXQ%253D%253D">
+        <input id="shareUrl" class="url" type="text" readonly />
         <div class="row">
           <button id="copyBtn" class="secondary">Copy link</button>
           <button id="waBtn" class="good">Share via WhatsApp</button>
@@ -483,7 +484,7 @@ Notes
       const u = new URL(location.href);
       const d = u.searchParams.get('d');
       const decoded = d ? decodeOptions(d) : null;
-      options = decoded && decoded.length ? decoded : ['Alice', 'Bob', 'Charlie', 'Diana'];
+      options = decoded && decoded.length ? decoded : ['Sex-T', 'Sex-t with nudes', 'sexy time', 'touch butt', 'Read the same book', 'Sex-t 2', 'Read separate books', 'Talk about decor', 'Talk about small projects in future', 'Talk about future home'];
       removeAfterSpin = false; removeCb.checked = false;
       resizeCanvas();
       updateAll();
@@ -492,6 +493,5 @@ Notes
 
     initFromURL();
   </script>
-
-
-</body></html>
+</body>
+</html>
